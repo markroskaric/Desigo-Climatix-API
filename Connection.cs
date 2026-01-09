@@ -117,24 +117,24 @@ namespace DesigoClimatixApi
         public int StatusCode { get; set; }
         public string Content { get; set; } = string.Empty;
         public string ErrorMessage { get; set; } = string.Empty;
-        public string GetValueWithoutLib(string content, string base64Id)
+        public string ParseClimaticValue(string content, string base64Id)
         {
+            if (string.IsNullOrEmpty(content)) return "Empty Response";
+
             try
             {
-                string searchPattern = "\"" + base64Id + "\":[";
-                int startPos = content.IndexOf(searchPattern);
+                string[] parts = content.Split(new string[] { base64Id }, StringSplitOptions.None);
                 
-                if (startPos == -1) return "ID not found";
+                if (parts.Length < 2) return "ID not found";
 
-                startPos += searchPattern.Length - 1; 
+                int startBracket = parts[1].IndexOf("[");
+                int endBracket = parts[1].IndexOf("]");
 
-                int endPos = content.IndexOf("]", startPos);
+                if (startBracket == -1 || endBracket == -1) return "Format error";
+
+                string rawValue = parts[1].Substring(startBracket, endBracket - startBracket + 1);
                 
-                if (endPos == -1) return "Invalid JSON format";
-
-                string arrayContent = content.Substring(startPos, endPos - startPos + 1);
-                
-                return arrayContent.Replace(" ", "").Replace("\n", "").Replace("\r", "");
+                return rawValue.Replace(" ", "").Replace("\n", "").Replace("\r", "").Replace("\t", "");
             }
             catch
             {
@@ -174,7 +174,7 @@ namespace DesigoClimatixApi
             {
                 if (string.IsNullOrEmpty(this.ErrorMessage))
                 {
-                    return GetValueWithoutLib(this.Content,base64Id);
+                    return ParseClimaticValue(this.Content,base64Id);
                 }
                 else
                 {

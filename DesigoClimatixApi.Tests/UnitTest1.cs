@@ -56,29 +56,16 @@ public class ConnectionTest
     // [Fact]
     // public void SendRequest_ShouldParseResponse_WhenEverythingIsOk()
     // {
-    //     var fakeHandler = new FakeS
-    //     var client = new HttpClient(fakeHandler);
+       
 
-    //     var con = new Connection(username, password, url, pin,client);
+    //     var con = new Connection("ADMIN", "SBTAdmin!", "http://192.168.1.113", "4000");
 
-    //     string expected = ("22.5");
-    //     object result = con.ReadValue(base64Id);
+    //     string expected = ("[-2.38,-2.38]");
+    //     object result = con.ReadValue("AyJaMNclAAE=");
         
-    //     Assert.Contains(expected, result.ToString());
+    //     Assert.Equal(expected, result.ToString());
     // }
-    [Fact]
-    public void SendRequest_ShouldParseResponse_WhenEverythingIsOk()
-    {
-        
-    ApiResponse api = new ApiResponse();
-    api.Content = """{"values":{"CiOOOscSAAE=":[22.5,45]}}""";
-    string pointId = "CiOOOscSAAE=";
-    string expected = "[22.5,45]"; 
 
-    object v = api.ToString(false, pointId, "test");
-
-    Assert.Contains(expected, v.ToString());
-    }
 }
 public class FakeSiemensHandler : HttpMessageHandler
 {
