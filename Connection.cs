@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using System.Net.Http.Headers;
+using Newtonsoft.Json.Linq;
 
 namespace DesigoClimatixApi
 {
@@ -151,7 +152,9 @@ namespace DesigoClimatixApi
             {
                 if (string.IsNullOrEmpty(this.ErrorMessage))
                 {
-                    return this.Content;
+                    var obj = JObject.Parse(this.Content);
+                    var value = obj["values"][base64Id][0];
+                    return value;
                 }
                 else
                 {
