@@ -26,7 +26,16 @@ namespace DesigoClimatixApi
         /// <param name="password">Password used to connect to controler</param>
         /// <param name="ip">IP addres of Controller you must include http:// or https://</param>
         /// <param name="pin">Pin used for controller</param>
-        public Connection(string username, string password, string ip, string pin, bool dev = false)
+        public Connection(string username, string password, string ip, string pin)
+        {
+            _baseUrl = $"{ip}/JSONGEN.HTML?FN=";
+            _pin = pin;
+            var authString = $"{username}:{password}";
+            _authHeaderValue = Convert.ToBase64String(Encoding.UTF8.GetBytes(authString));
+            _dev = false;
+            _client = new() { Timeout = TimeSpan.FromSeconds(15) };
+        }
+        public Connection(string username, string password, string ip, string pin, bool dev)
         {
             _baseUrl = $"{ip}/JSONGEN.HTML?FN=";
             _pin = pin;
