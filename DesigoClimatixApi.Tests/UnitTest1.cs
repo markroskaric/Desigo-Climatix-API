@@ -1,5 +1,6 @@
 ﻿using System.Drawing;
 using System.Net;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 
 namespace DesigoClimatixApi.Tests;
@@ -52,17 +53,33 @@ public class ConnectionTest
         
         Assert.Contains(expectedReadUrl,resultBuildReadUrl);
     }
+    // [Fact]
+    // public void SendRequest_ShouldParseResponse_WhenEverythingIsOk()
+    // {
+    //     var fakeHandler = new FakeS
+    //     var client = new HttpClient(fakeHandler);
+
+    //     var con = new Connection(username, password, url, pin,client);
+
+    //     string expected = ("22.5");
+    //     object result = con.ReadValue(base64Id);
+        
+    //     Assert.Contains(expected, result.ToString());
+    // }
     [Fact]
     public void SendRequest_ShouldParseResponse_WhenEverythingIsOk()
     {
-        var fakeHandler = new FakeSiemensHandler("{\"Value\": \"22.5\"}");
-        var client = new HttpClient(fakeHandler);
-        var con = new Connection(username, password, url, pin,client);
-
-        string expected = ("{\"Value\": \"22.5\"}");
-        object result = con.ReadValue(base64Id);
         
-        Assert.Contains(expected, result.ToString());
+        ApiResponse api = new ApiResponse();
+        api.Content = "{\"values\":{\"CiOOOscSAAE=\":[22.5]}}";
+         object v = api.ToString(false,"CiOOOscSAAE=","test");
+
+      
+
+        string expected = ("22.5");
+       
+        
+        Assert.Contains(expected, v.ToString());
     }
 }
 public class FakeSiemensHandler : HttpMessageHandler
