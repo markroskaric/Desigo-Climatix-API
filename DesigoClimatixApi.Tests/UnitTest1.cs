@@ -19,11 +19,11 @@ public class ConnectionTest
     [Fact]
     public void UrlBuilder_ShouldReturnCorrectFormat()
     {
-        string expectedStart = "http://10.0.0.1/JSONGEN.HTML";
+        string expectedStart = "http://10.0.0.1/JSONGEN.HTML?FN=";
 
         string resultUrl = con.GetBaseUrl(); 
 
-        Assert.Contains(expectedStart, resultUrl);
+        Assert.Equal(expectedStart, resultUrl);
     }
 
     [Fact]
@@ -33,8 +33,9 @@ public class ConnectionTest
 
         string resultBase64 = con.GetAuthHeaderValue();
 
-        Assert.Contains(expectedBase64String,resultBase64);
+        Assert.Equal(expectedBase64String,resultBase64);
     }
+    
     [Fact]
     public void ValidateWriteUrlString()
     {
@@ -42,8 +43,9 @@ public class ConnectionTest
 
         string resultBuildWriteUrl = con.BuildWriteUrl(base64Id,value);
         
-        Assert.Contains(expectedWriteUrl,resultBuildWriteUrl);
+        Assert.Equal(expectedWriteUrl,resultBuildWriteUrl);
     }
+    
     [Fact]
     public void ValidateReadUrlString()
     {
@@ -51,39 +53,55 @@ public class ConnectionTest
 
         string resultBuildReadUrl = con.BuildReadUrl(base64Id);
         
-        Assert.Contains(expectedReadUrl,resultBuildReadUrl);
+        Assert.Equal(expectedReadUrl,resultBuildReadUrl);
     }
-    // [Fact]
-    // public void SendRequest_ShouldParseResponse_WhenEverythingIsOk()
-    // {
-       
-
-    //     var con = new Connection("ADMIN", "SBTAdmin!", "http://192.168.1.113", "4000");
-
-    //     string expected = ("[-2.38,-2.38]");
-    //     object result = con.ReadValue("AyJaMNclBwE=");
+    
+    [Fact]
+    public void ValidateFormatResultRead()
+    {
+        string[] formats = [
+            """{"values":{"AyJaMNclDQE=":".IO.P.AI.TZS.Val"}}""",
+            """{"values":{"AyJaMNclDQE=":"°C"}}""",
+            """{"values":{"AyJaMNclDQE=":[5,5]}}""",
+            """{"values":{"AyJaMNclDQE=":[100,100]}}""",
+            """{"values":{"AyJaMNclDQE=":"100"}}"""
+        ];
         
-    //     Assert.Equal(expected, result.ToString());
-    // }
-
-}
-public class FakeSiemensHandler : HttpMessageHandler
-{
-    private readonly string _fakeResponse;
-    private readonly HttpStatusCode _code;
-
-    public FakeSiemensHandler(string response, HttpStatusCode code = HttpStatusCode.OK)
-    {
-        _fakeResponse = response;
-        _code = code;
-    }
-
-    protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-    {
-        return Task.FromResult(new HttpResponseMessage
+        string[] results = [".IO.P.AI.TZS.Val", "°C", "5", "100", "100"];
+        string base64Id = "AyJaMNclDQE=";
+        
+        ApiResponse response = new ApiResponse();
+        
+        for (int i = 0; i < formats.Length; i++)
         {
-            StatusCode = _code,
-            Content = new StringContent(_fakeResponse)
-        });
+            response.Content = formats[i];
+            string expected = results[i];
+
+            var formatedResponse = response.ToFormattedResult(false, base64Id, "test-url", ApiOperation.Read);
+
+            Assert.Equal(expected, formatedResponse.ToString());
+        }
     }
+
+    [Fact]
+    public void ValidateFormatResultWrite()
+    {
+
+        ApiResponse response = new();
+        
+        response.IsSuccess = true;
+        
+        var formatedResponse1 = response.ToFormattedResult(false, base64Id, "test-url", ApiOperation.Write);
+
+        Assert.Equal("Success", formatedResponse1.ToString());
+
+
+
+        response.IsSuccess = false;
+
+        var formatedResponse2 = response.ToFormattedResult(false, base64Id, "test-url", ApiOperation.Write);
+
+        Assert.Equal("Write Failed", formatedResponse2.ToString());
+    }
+
 }

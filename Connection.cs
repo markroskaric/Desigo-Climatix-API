@@ -11,29 +11,18 @@ namespace DesigoClimatixApi
         private readonly bool _dev = false;
         private readonly HttpClient _client ;
 
-        public string GetBaseUrl()
+        internal string GetBaseUrl()
         {
             return _baseUrl;
         }
-        public string GetAuthHeaderValue()
+        internal string GetAuthHeaderValue()
         {
             return _authHeaderValue;
         }
-        /// <summary>
-        /// Create a connection to a Controler
-        /// </summary>
-        /// <param name="username">Username used to connect to  controler</param>
-        /// <param name="password">Password used to connect to controler</param>
-        /// <param name="ip">IP addres of Controller you must include http:// or https://</param>
-        /// <param name="pin">Pin used for controller</param>
-        public Connection(string username, string password, string ip, string pin)
+        public Connection(string username, string password, string ip, string pin) 
+            : this(username, password, ip, pin, false) 
         {
-            _baseUrl = $"{ip}/JSONGEN.HTML?FN=";
-            _pin = pin;
-            var authString = $"{username}:{password}";
-            _authHeaderValue = Convert.ToBase64String(Encoding.UTF8.GetBytes(authString));
-            _dev = false;
-            _client = new() { Timeout = TimeSpan.FromSeconds(15) };
+
         }
         public Connection(string username, string password, string ip, string pin, bool dev)
         {
@@ -44,37 +33,17 @@ namespace DesigoClimatixApi
             _dev = dev;
             _client = new() { Timeout = TimeSpan.FromSeconds(15) };
         }
-        internal Connection(string username, string password, string ip, string pin,HttpClient client,bool dev = false)
-        {
-            _baseUrl = $"{ip}/JSONGEN.HTML?FN=";
-            _pin = pin;
-            var authString = $"{username}:{password}";
-            _authHeaderValue = Convert.ToBase64String(Encoding.UTF8.GetBytes(authString));
-            _dev = dev;
-            _client = client;
-        }
-        /// <summary>
-        /// Function used to read a point
-        /// </summary>
-        /// <param name="base64Id">A base64 Id of a point you want to read</param>
-        /// <returns>Return a value or an error if something went wrong</returns>
         public object ReadValue(string base64Id)
         { 
-            return  SendRequest(BuildReadUrl(base64Id)).ToString(_dev,base64Id,BuildReadUrl(base64Id));
+           var url = BuildReadUrl(base64Id);
+           var response = SendRequest(url);
+           return response.ToFormattedResult(_dev, base64Id, url, ApiOperation.Read);
         }
-        /// <summary>
-        /// Function used to write a value to a point
-        /// </summary>
-        /// <param name="base64Id">A base64 Id of a point you want to read</param>
-        /// <param name="value">Value that will be writen to a point</param>
-        /// <returns>Return a value or an error if something went wrong</returns>
         public object WriteValue(string base64Id, string value)
         {
-            return SendRequest(BuildWriteUrl(base64Id,value)).ToString(_dev,base64Id,BuildWriteUrl(base64Id,value));
-        }
-        /// <summary>
-        /// Used to send a request to a endpoint woth auth
-        /// </summary>
+            string url = BuildWriteUrl(base64Id,value);
+            var response = SendRequest(url);
+            return response.ToFormattedResult(_dev, base64Id, url, ApiOperation.Write);        }
         internal ApiResponse SendRequest(string url)
         {
             var result = new ApiResponse();
@@ -100,7 +69,6 @@ namespace DesigoClimatixApi
                 return result;
             }   
         }
-
         internal string BuildReadUrl(string base64Id)
         {
             return $"{_baseUrl}Read&OA={base64Id}&PIN={_pin}";
@@ -117,7 +85,7 @@ namespace DesigoClimatixApi
         public int StatusCode { get; set; }
         public string Content { get; set; } = string.Empty;
         public string ErrorMessage { get; set; } = string.Empty;
-        public string ParseClimaticValue(string content, string base64Id)
+        internal string ParseClimatixValue(string content, string base64Id)
         {
           if (string.IsNullOrEmpty(content)) return "Empty Response";
 
@@ -160,12 +128,10 @@ namespace DesigoClimatixApi
                 return "Parsing error";
             }
         }
-        public object ToString(bool devMode,string base64Id,string  apiCall)
+        internal object ToFormattedResult(bool devMode,string base64Id,string  apiCall, ApiOperation operation)
         {
             if (devMode)
             {
-                if (string.IsNullOrEmpty(this.ErrorMessage))
-                {
                 return new 
                     {
                         IsSuccess = this.IsSuccess,
@@ -173,37 +139,27 @@ namespace DesigoClimatixApi
                         Content = this.Content,
                         ErrorMessage = this.ErrorMessage,
                         PointId = base64Id,
-                        APICaall = apiCall 
+                        APICaall = apiCall,
+                        Op = operation.ToString()
                     };              
-                }
-                else
-                {
-                  return new 
-                    {
-                        IsSuccess = this.IsSuccess,
-                        StatusCode = this.StatusCode,
-                        Content = this.Content,
-                        ErrorMessage = this.ErrorMessage,
-                        PointId = base64Id,
-                        APICaall = apiCall 
-                    };              
-                }
-                }
+            }
             else
             {
-                if (string.IsNullOrEmpty(this.ErrorMessage))
+               if (!string.IsNullOrEmpty(this.ErrorMessage))
                 {
-                    return ParseClimaticValue(this.Content,base64Id);
+                    return "Error: " + this.ErrorMessage;
                 }
-                else
+                if (operation == ApiOperation.Write)
                 {
-                    return new
-                    {
-                        Error = this.ErrorMessage
-                    };
+                    return this.IsSuccess ? "Success" : "Write Failed";
+                }
+                else 
+                {
+                    return ParseClimatixValue(this.Content, base64Id);
                 }
             }
         }
     }
 
+   public enum ApiOperation { Read, Write }
 }

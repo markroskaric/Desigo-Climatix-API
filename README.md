@@ -41,27 +41,48 @@ var resultWrite = con.WriteValue("AiN4e05FAAE=", "1");
 console("Write Result: " + resultWrite);
 ```
 
+# Data Handling & Formatting
+
+This library is designed to simplify Siemens Climatix API responses. It automatically strips away complex JSON structures and returns only the clean, essential value needed for Desigo CC.
+
+### How it works:
+
+| Raw JSON Response from Controller (`Content`) | Clean Output Value |
+| :-------------------------------------------- | :----------------- |
+| `{"values":{"ID":".IO.P.AI.TZS.Val"}}`        | `.IO.P.AI.TZS.Val` |
+| `{"values":{"ID":"°C"}}`                      | `°C`               |
+| `{"values":{"ID":[5, 5]}}`                    | `5`                |
+| `{"values":{"ID":[100, 100]}}`                | `100`              |
+| `{"values":{"ID":"100"}}`                     | `100`              |
+
+## Write Operations
+
+When sending data to the controller, the library simplifies the response into a clear status message:
+
+- **`Success`**: The value was successfully updated.
+- **`Write Failed`**: The update failed (check the ID, credentials, or network connection).
+
 ## 🔧 Advanced Features & Debugging
 
-The DesigoClimatixApi includes an **Advanced Developer Mode**.
+If you need the full raw data instead of just the cleaned value, you can enable **Developer Mode** (`devMode = true`).
 
-### **The Developer Mode (devMode)**
+### **The Developer Object**
 
-By default, the library operates in **Standard Mode**, returning simple strings (the value or the error). When `devMode` is enabled, the library returns a **Full Response Object**.
+When `devMode` is active, the library returns a complete object containing all response details. This is useful for troubleshooting connection issues or seeing the raw JSON structure.
 
-### **Developer Object Schema**
+**Object Structure:**
 
-When `devMode` is active, the returned object contains the following properties:
+- **`IsSuccess`**: Boolean (True if the request reached the controller).
+- **`StatusCode`**: The raw HTTP status code (e.g., 200, 401, 404).
+- **`Content`**: The raw, unformatted JSON string from the controller.
+- **`ErrorMessage`**: Details of any internal library or network errors.
+- **`PointId`**: The Base64 ID used in the request.
+- **`APICall`**: The full URL used for the request.
+- **`Op`**: The operation type (`Read` or `Write`).
 
-```javascript
-{
-  "IsSuccess": true,       // Boolean: True if HTTP status is 200
-  "StatusCode": 200,       // Integer: Raw HTTP status (e.g., 401, 404)
-  "Content": "{...}",      // String: The raw JSON string from the controller
-  "ErrorMessage": "",      // String: Internal error details
-  "PointId": "AiN4e0..."   // String: The Base64 ID targeted in the request
-}
-```
+### **How to use it?**
+
+Use this mode if you need to debug why a value is "Not Found" or if you need to log the exact `APICall` being sent to the Siemens Climatix hardware.
 
 ```javascript
 // Import the namespace from your DLL
